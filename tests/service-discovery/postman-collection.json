@@ -1,0 +1,1012 @@
+{
+  "info": {
+    "_postman_id": "a6e3cba2-82a8-4a7b-aef6-7b8d7a4b0707",
+    "name": "TH7 - Student Profile Service Discovery",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Đăng nhập một lần, sau đó gửi 20 request độc lập qua Gateway -> Document Service -> Eureka/LoadBalancer -> Profile Service. Chạy toàn bộ collection để tổng hợp instanceId và xác nhận quan sát được ít nhất hai Profile instance."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1 - Login (admin01)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin01\",\n  \"password\": \"DemoPassword123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.accessToken) pm.collectionVariables.set('token', body.accessToken);",
+              "pm.collectionVariables.set('discoverySeenInstances', '[]');",
+              "pm.collectionVariables.set('discoveryRequestCount', '0');",
+              "pm.test('Login successful', function () { pm.response.to.have.status(200); pm.expect(body.accessToken).to.be.a('string'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Discovery request 01/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Discovery request 02/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Discovery request 03/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Discovery request 04/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Discovery request 05/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Discovery request 06/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Discovery request 07/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Discovery request 08/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Discovery request 09/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Discovery request 10/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Discovery request 11/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Discovery request 12/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Discovery request 13/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Discovery request 14/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Discovery request 15/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Discovery request 16/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Discovery request 17/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 - Discovery request 18/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 - Discovery request 19/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 - Discovery request 20/20",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/discovery/profile-instance-info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "discovery",
+            "profile-instance-info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200 from Document -> Profile discovery', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Profile service metadata is valid', function () {",
+              "  pm.expect(body.serviceId).to.eql('profile-service');",
+              "  pm.expect(body.instanceId).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.instancePort).to.be.oneOf([8081, 8084]);",
+              "});",
+              "let seen = JSON.parse(pm.collectionVariables.get('discoverySeenInstances') || '[]');",
+              "if (!seen.includes(body.instanceId)) seen.push(body.instanceId);",
+              "pm.collectionVariables.set('discoverySeenInstances', JSON.stringify(seen));",
+              "const count = Number(pm.collectionVariables.get('discoveryRequestCount') || '0') + 1;",
+              "pm.collectionVariables.set('discoveryRequestCount', String(count));",
+              "pm.test('All 20 requests completed and at least two instances observed', function () {",
+              "  pm.expect(count).to.eql(20);",
+              "  pm.expect(seen.length).to.be.at.least(2, 'Only one Profile instance was observed; check Eureka registration and run all 20 requests again.');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

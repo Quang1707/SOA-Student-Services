@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "1-Discovery",
+            "request": "launch",
+            "mainClass": "com.example.discovery_server.DiscoveryServerApplication",
+            "projectName": "discovery-server",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "2-Profile",
+            "request": "launch",
+            "mainClass": "com.example.profile.ProfileApplication",
+            "projectName": "profile-service",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "3-Document",
+            "request": "launch",
+            "mainClass": "com.example.document.DocumentApplication",
+            "projectName": "document-service",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "4-Gateway",
+            "request": "launch",
+            "mainClass": "com.example.api_gateway.ApiGatewayApplication",
+            "projectName": "api-gateway",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Run-All-Java",
+            "configurations": ["1-Discovery", "2-Profile", "3-Document", "4-Gateway"],
+            "stopAll": true
+        }
+    ]
+}

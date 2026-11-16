@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Hồ Sơ Sinh Viên</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" aria-label="Điều hướng chính">
+            <div>
+                <div class="brand">
+                    <span class="brand-icon" aria-hidden="true">🎓</span>
+                    <div>
+                        <div class="brand-subtitle">Hệ Thống</div>
+                        <h1 class="brand-title">Quản Lý Sinh Viên</h1>
+                    </div>
+                </div>
+
+                <nav role="tablist" aria-label="Các phân hệ quản lý">
+                    <button class="nav-item" role="tab" onclick="switchTab('dashboard')" id="tab-btn-dashboard">
+                        <span class="nav-icon" aria-hidden="true">📊</span> Tổng quan &amp; DB
+                    </button>
+                    <button class="nav-item active" role="tab" onclick="switchTab('profiles')" id="tab-btn-profiles">
+                        <span class="nav-icon" aria-hidden="true">👥</span> Hồ sơ sinh viên
+                    </button>
+                    <button class="nav-item" role="tab" onclick="switchTab('security')" id="tab-btn-security">
+                        <span class="nav-icon" aria-hidden="true">🔐</span> Xác thực &amp; Bảo mật
+                    </button>
+                    <button class="nav-item" role="tab" onclick="switchTab('documents')" id="tab-btn-documents">
+                        <span class="nav-icon" aria-hidden="true">📄</span> Tài liệu &amp; Transaction
+                    </button>
+                    <button class="nav-item" role="tab" onclick="switchTab('audits')" id="tab-btn-audits">
+                        <span class="nav-icon" aria-hidden="true">🔔</span> Nhật ký Audit
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Khung trạng thái phiên đăng nhập JWT -->
+            <div class="auth-status-card">
+                <div class="auth-title">🔑 Phiên xác thực JWT</div>
+                <div id="current-user-badge" class="user-info" aria-live="polite">Đang đăng nhập...</div>
+                <div class="quick-login-title">Đăng nhập nhanh DEMO (môi trường học tập):</div>
+                <div class="quick-btn-grid">
+                    <button type="button" onclick="quickLogin('admin01')" class="q-btn admin">admin01 (ADMIN)</button>
+                    <button type="button" onclick="quickLogin('staff01')" class="q-btn staff">staff01 (STAFF)</button>
+                    <button type="button" onclick="quickLogin('student01')" class="q-btn student">student01 (SV001)</button>
+                    <button type="button" onclick="quickLogin('student02')" class="q-btn student">student02 (SV002)</button>
+                    <button type="button" onclick="clearToken()" class="q-btn danger">Xóa Token (Test 401)</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="search-box" role="search" aria-label="Tìm kiếm và lọc hồ sơ sinh viên">
+                    <input type="text" id="search-input" placeholder="🔍 Tìm theo tên hoặc mã SV..." aria-label="Tìm kiếm theo tên hoặc mã sinh viên">
+                    <select id="filter-gender" onchange="loadProfiles()" aria-label="Lọc theo giới tính">
+                        <option value="">Tất cả giới tính</option>
+                        <option value="MALE">Nam (MALE)</option>
+                        <option value="FEMALE">Nữ (FEMALE)</option>
+                    </select>
+                    <select id="filter-status" onchange="loadProfiles()" aria-label="Lọc theo trạng thái học tập">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="ACTIVE">Đang học (ACTIVE)</option>
+                        <option value="PENDING">Chờ duyệt (PENDING)</option>
+                        <option value="COMPLETED">Đã hoàn thành (COMPLETED)</option>
+                    </select>
+                </div>
+
+                <div class="topbar-actions">
+                    <div class="admin-badge" id="topbar-role-badge" aria-live="polite">🛡️ Chưa đăng nhập</div>
+                    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Chuyển đổi giao diện Sáng / Tối" aria-label="Chuyển đổi giao diện Sáng / Tối">
+                        🌙 Tối
+                    </button>
+                </div>
+            </header>
+
+            <!-- Global Toast Alert (Không gây giật bố cục CLS) -->
+            <div id="global-alert" class="alert-box toast-alert" role="alert" aria-live="polite" style="display:none;"></div>
+
+            <!-- TAB: XÁC THỰC & KIỂM THỬ BẢO MẬT (TH5) -->
+            <section id="tab-security" class="tab-panel" style="display:none;">
+                <div class="panel-header">
+                    <div>
+                        <h2>🔐 Trung tâm Xác thực JWT, Phân quyền RBAC &amp; Kiểm thử Bảo mật</h2>
+                        <p class="section-subtitle">Kiểm tra luồng cấp phát JWT, phân quyền theo vai trò và phòng chống lỗ hổng IDOR.</p>
+                    </div>
+                </div>
+
+                <div class="security-grid">
+                    <div class="sec-card">
+                        <h3>1. Đăng nhập tài khoản</h3>
+                        <p class="hint">Tài khoản mẫu dùng cho môi trường học tập. Mật khẩu demo: <code>DemoPassword123!</code>. Trang không tự đăng nhập ADMIN.</p>
+                        <div class="form-inline security-login-form">
+                            <div class="field-group">
+                                <label for="login-username">Tên đăng nhập</label>
+                                <input type="text" id="login-username" value="student01" placeholder="Username" autocomplete="username">
+                            </div>
+                            <div class="field-group">
+                                <label for="login-password">Mật khẩu</label>
+                                <input type="password" id="login-password" value="DemoPassword123!" placeholder="Password" autocomplete="current-password">
+                            </div>
+                            <button type="button" class="btn-primary" onclick="manualLogin()">Đăng nhập nhận JWT</button>
+                        </div>
+                        <div class="sec-btn-row">
+                            <button type="button" class="btn-secondary" onclick="quickLogin('locked01')">Thử TK bị khóa (locked01 &rarr; 401)</button>
+                            <button type="button" class="btn-secondary" onclick="useExpiredToken()">Nạp Token hết hạn (Test 401)</button>
+                        </div>
+                        <div class="jwt-box-wrapper">
+                            <label for="jwt-display" class="field-label">Access Token hiện tại (Bearer JWT):</label>
+                            <textarea id="jwt-display" class="code-textarea" rows="3" readonly placeholder="Chưa có JWT token..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="sec-card">
+                        <h3>2. Phòng Lab Kiểm thử 6 Tình huống Bảo mật Bắt buộc</h3>
+                        <p class="hint">Bấm từng nút dưới đây để thực thi request thật tới Backend và đối chiếu HTTP Status Code:</p>
+                        <div class="test-btn-list">
+                            <button type="button" class="test-btn" onclick="runSecurityTest('OWN_PROFILE')">
+                                ✅ <strong>[TC06 - 200 OK]</strong> <code>student01</code> xem hồ sơ của chính mình (<code>GET /profiles/SV001</code>)
+                            </button>
+                            <button type="button" class="test-btn warn" onclick="runSecurityTest('IDOR_PROFILE')">
+                                🚫 <strong>[TC07 - 403 Forbidden]</strong> <code>student01</code> cố xem hồ sơ của <code>SV002</code> (Chống tấn công IDOR)
+                            </button>
+                            <button type="button" class="test-btn warn" onclick="runSecurityTest('STUDENT_CREATE')">
+                                🚫 <strong>[TC08 - 403 Forbidden]</strong> <code>student01</code> cố gọi API tạo mới hồ sơ (Sai vai trò RBAC)
+                            </button>
+                            <button type="button" class="test-btn warn" onclick="runSecurityTest('STAFF_APPROVE')">
+                                🚫 <strong>[TC10 - 403 Forbidden]</strong> <code>staff01</code> cố gọi API Duyệt hồ sơ (Chỉ <code>ADMIN</code> được phép)
+                            </button>
+                            <button type="button" class="test-btn danger" onclick="runSecurityTest('NO_TOKEN')">
+                                🔒 <strong>[TC04 - 401 Unauthorized]</strong> Gọi API bảo vệ mà không gửi kèm Bearer Token
+                            </button>
+                            <button type="button" class="test-btn warn" onclick="runSecurityTest('DELETE_VERIFIED_DOC')">
+                                🛑 <strong>[TC13 - 400 Business Rule]</strong> <code>student01</code> cố xóa tài liệu #1 đã được nhà trường xác thực (<code>VERIFIED</code>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sec-card sec-output-card">
+                    <h3>Kết quả phản hồi trực tiếp từ Backend Security Filter / Controller:</h3>
+                    <pre id="security-test-output" class="terminal-output" aria-live="polite">Chưa chạy kịch bản kiểm thử nào...</pre>
+                </div>
+            </section>
+
+            <!-- TAB 2: HỒ SƠ SINH VIÊN -->
+            <section id="tab-profiles" class="tab-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Quản lý hồ sơ sinh viên</h2>
+                        <p class="section-subtitle">Tra cứu, thêm mới, cập nhật thông tin liên hệ và phê duyệt hồ sơ theo phân quyền RBAC.</p>
+                    </div>
+                    <button type="button" class="btn-primary" id="btn-add-profile" onclick="openModal()" hidden>+ Thêm sinh viên</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mã SV</th>
+                                <th>Họ và Tên</th>
+                                <th>Giới tính</th>
+                                <th>SĐT / Email</th>
+                                <th>Chuyên ngành</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác (Theo quyền)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="profile-table-body"></tbody>
+                    </table>
+                </div>
+                <div class="pagination-info" id="pagination-info" aria-live="polite"></div>
+            </section>
+
+            <!-- TAB 3: TÀI LIỆU MINH CHỨNG -->
+            <section id="tab-documents" class="tab-panel" style="display:none;">
+                <div class="panel-header">
+                    <div>
+                        <h2>Quản lý Tài liệu Minh chứng</h2>
+                        <p class="section-subtitle">Tải lên minh chứng định dạng PDF/PNG/JPG và kiểm thử cơ chế Transaction Rollback.</p>
+                    </div>
+                </div>
+
+                <div class="form-inline upload-card">
+                    <div class="field-group">
+                        <label for="doc-student-id">Mã sinh viên</label>
+                        <input type="text" id="doc-student-id" placeholder="VD: SV001" maxlength="20" autocomplete="off" required>
+                    </div>
+                    <div class="field-group">
+                        <label for="doc-type">Loại giấy tờ</label>
+                        <input type="text" id="doc-type" placeholder="VD: CCCD, Học bạ" maxlength="100" autocomplete="off" required>
+                    </div>
+                    <div class="field-group file-field-group">
+                        <label for="doc-file">Tệp đính kèm (Tối đa 10 MB)</label>
+                        <input type="file" id="doc-file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" aria-label="Chọn file tài liệu" required>
+                    </div>
+                    <p class="hint upload-hint">Hỗ trợ PDF, PNG, JPG hoặc JPEG (tối đa 10 MB). File được tải lên và tải xuống qua API đã xác thực JWT.</p>
+                    <div class="upload-options-row">
+                        <div class="simulation-checks">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="doc-simulate-delay"> Giả lập trễ 5s (Test 504)
+                            </label>
+                            <label class="checkbox-label danger-check">
+                                <input type="checkbox" id="doc-simulate-rollback"> Giả lập lỗi Transaction (Test Rollback TH4)
+                            </label>
+                        </div>
+                        <button type="button" class="btn-primary" id="btn-upload-document" onclick="uploadDocument()">📤 Nộp tài liệu</button>
+                    </div>
+                </div>
+
+                <div id="doc-alert" class="alert-box" role="alert" aria-live="polite" style="display:none;"></div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID (PK)</th>
+                                <th>Mã SV</th>
+                                <th>Họ tên SV</th>
+                                <th>Loại tài liệu</th>
+                                <th>Trạng thái duyệt</th>
+                                <th>Đường dẫn / Tệp</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="document-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 1: TỔNG QUAN -->
+            <section id="tab-dashboard" class="tab-panel" style="display:none;">
+                <div class="panel-header">
+                    <div>
+                        <h2>Tổng quan Hệ thống &amp; Kiến trúc Database-per-Service</h2>
+                        <p class="section-subtitle">Số liệu thống kê thời gian thực và điểm kết nối kỹ thuật giữa các Microservices.</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="stats-container"></div>
+
+                <div class="sec-card architecture-card">
+                    <h3>🗄️ Công cụ kiểm tra Database &amp; API Contract</h3>
+                    <ul class="arch-list">
+                        <li><strong>API Gateway (cổng truy cập thống nhất):</strong> <a href="http://localhost:8080" target="_blank" rel="noopener noreferrer">http://localhost:8080</a></li>
+                        <li><strong>Eureka Discovery Dashboard:</strong> <a href="http://localhost:8761" target="_blank" rel="noopener noreferrer">http://localhost:8761</a> — kiểm tra đăng ký của <code>PROFILE-SERVICE</code>, <code>DOCUMENT-SERVICE</code> và <code>API-GATEWAY</code>.</li>
+                        <li><strong>Swagger UI (truy cập kỹ thuật trực tiếp):</strong> <a href="http://localhost:8081/swagger-ui.html" target="_blank" rel="noopener noreferrer" class="link-accent">Profile Swagger</a> | <a href="http://localhost:8082/swagger-ui.html" target="_blank" rel="noopener noreferrer" class="link-accent">Document Swagger</a></li>
+                        <li><strong>Database:</strong> PostgreSQL; H2 Console đã tắt. Các API nghiệp vụ từ giao diện sử dụng cổng Gateway <code>8080</code>.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- TAB 4: LỊCH SỬ AUDIT -->
+            <section id="tab-audits" class="tab-panel" style="display:none;">
+                <div class="panel-header">
+                    <div>
+                        <h2>Nhật ký Kiểm toán &amp; Cảnh báo Bảo mật</h2>
+                        <p class="section-subtitle">Theo dõi các sự kiện nghiệp vụ và cảnh báo truy cập trái phép từ hệ thống.</p>
+                    </div>
+                    <button type="button" class="btn-primary" onclick="loadAudits()">🔄 Làm mới</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Sự kiện (Event)</th>
+                                <th>Mã SV / Đối tượng</th>
+                                <th>Người thực hiện</th>
+                                <th>Chi tiết hành động</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Thêm/Sửa Sinh Viên -->
+    <div class="modal-backdrop" id="profile-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Thêm hồ sơ sinh viên mới</h3>
+                <button type="button" class="modal-close-btn" onclick="closeModal()" aria-label="Đóng cửa sổ">&times;</button>
+            </div>
+
+            <div id="modal-error" class="alert-box error" role="alert" aria-live="polite" style="display:none;"></div>
+
+            <div class="modal-form-grid">
+                <div class="field-group">
+                    <label for="form-studentId">Mã sinh viên <span class="req">*</span></label>
+                    <input type="text" id="form-studentId" placeholder="VD: SV004" maxlength="20" pattern="[A-Za-z0-9_-]{1,20}" autocomplete="off" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="form-fullName">Họ và tên <span class="req">*</span></label>
+                    <input type="text" id="form-fullName" placeholder="3 - 100 ký tự" minlength="3" maxlength="100" autocomplete="name" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="form-dob">Ngày sinh <span class="req">*</span></label>
+                    <input type="date" id="form-dob" max="2099-12-31" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="form-gender">Giới tính <span class="req">*</span></label>
+                    <select id="form-gender">
+                        <option value="MALE">Nam (MALE)</option>
+                        <option value="FEMALE">Nữ (FEMALE)</option>
+                        <option value="OTHER">Khác (OTHER)</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="form-email">Email <span class="req">*</span></label>
+                    <input type="email" id="form-email" placeholder="VD: sv004@student.edu.vn" maxlength="100" autocomplete="email" required>
+                </div>
+
+                <div class="field-group">
+                    <label for="form-phone">Số điện thoại <span class="req">*</span></label>
+                    <input type="tel" id="form-phone" placeholder="Đúng 10 chữ số" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" required>
+                </div>
+
+                <div class="field-group full-width">
+                    <label for="form-major">Chuyên ngành <span class="req">*</span></label>
+                    <input type="text" id="form-major" placeholder="VD: Kỹ thuật phần mềm" maxlength="100" required>
+                </div>
+
+                <div class="field-group full-width">
+                    <label for="form-address">Địa chỉ liên hệ</label>
+                    <input type="text" id="form-address" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố" maxlength="255" autocomplete="street-address">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Hủy</button>
+                <button type="button" class="btn-primary" id="btn-save-profile" onclick="saveProfile()">Lưu hồ sơ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

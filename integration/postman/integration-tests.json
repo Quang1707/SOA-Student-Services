@@ -1,0 +1,619 @@
+{
+  "info": {
+    "name": "TH6 – Student Profile System Integration Testing",
+    "description": "Bộ kiểm thử tích hợp dịch vụ (Consumer: Document Service -> Provider: Profile Service) cho Bài thực hành số 6 - Nhóm 9",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "STAFF_TOKEN",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "STUDENT01_TOKEN",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "TC01 – Đăng nhập STAFF",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC01 - Đăng nhập STAFF thành công (200 OK)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.accessToken).to.be.a('string');",
+              "    pm.expect(jsonData.role).to.eql('STAFF');",
+              "    pm.collectionVariables.set('STAFF_TOKEN', jsonData.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"staff01\",\n  \"password\": \"DemoPassword123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC02 – Lấy hồ sơ SV001 (Kiểm tra Provider độc lập)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC02 - Provider trả về hồ sơ SV001 (200 OK)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.studentId).to.eql('SV001');",
+              "    pm.expect(jsonData.fullName).to.eql('Nguyễn Văn A');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/profiles/SV001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "profiles",
+            "SV001"
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC03 – Thêm đường dẫn tài liệu cho SV001 (Luồng tích hợp thành công)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC03 - Consumer gọi Provider và tạo tài liệu thành công (201 Created)', function () {",
+              "    pm.response.to.have.status(201);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.studentId).to.eql('SV001');",
+              "    pm.expect(jsonData.studentName).to.eql('Nguyễn Văn A');",
+              "    pm.expect(jsonData.docStatus).to.eql('PENDING');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV001?docType=Bằng tốt nghiệp&docUrl=https://example.com/bang-tot-nghiep.pdf&simulateDelay=false&simulateRollback=false",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV001"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/bang-tot-nghiep.pdf"
+            },
+            {
+              "key": "simulateDelay",
+              "value": "false"
+            },
+            {
+              "key": "simulateRollback",
+              "value": "false"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC04 – Mã sinh viên không tồn tại (SV999 -> 404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC04 - Sinh viên SV999 không tồn tại (404 Not Found)', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV999?docType=Bằng tốt nghiệp&docUrl=https://example.com/test.pdf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV999"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/test.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC05 – Profile Service không khả dụng (Tắt Profile Service -> 503)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC05 - Profile Service ngừng hoạt động (503 Service Unavailable)', function () {",
+              "    pm.response.to.have.status(503);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV001?docType=Bằng tốt nghiệp&docUrl=https://example.com/test.pdf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV001"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/test.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC06 – Provider phản hồi chậm / Timeout (simulateDelay=true -> 503)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC06 - Provider phản hồi chậm / Timeout (503 Service Unavailable)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([503, 504]);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV001?docType=Bằng tốt nghiệp&docUrl=https://example.com/test.pdf&simulateDelay=true&simulateRollback=false",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV001"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/test.pdf"
+            },
+            {
+              "key": "simulateDelay",
+              "value": "true"
+            },
+            {
+              "key": "simulateRollback",
+              "value": "false"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC07 – Đường dẫn tài liệu không hợp lệ (HTTP thường -> 400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC07 - Từ chối URL HTTP không phải HTTPS (400 Bad Request)', function () {",
+              "    pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV001?docType=Bằng tốt nghiệp&docUrl=http://example.com/test.pdf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV001"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "http://example.com/test.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC08 – Không gửi Bearer Token (No Auth -> 401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC08 - Chặn yêu cầu không có JWT (401 Unauthorized)', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV001?docType=Bằng tốt nghiệp&docUrl=https://example.com/bang-tot-nghiep.pdf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV001"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/bang-tot-nghiep.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC09a – Đăng nhập student01 (Lấy Token SV001)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Đăng nhập student01 thành công (200 OK)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.collectionVariables.set('STUDENT01_TOKEN', jsonData.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"student01\",\n  \"password\": \"DemoPassword123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC09 – Sinh viên student01 nộp tài liệu cho hồ sơ SV002 (403 Forbidden)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC09 - Chặn sinh viên nộp tài liệu hộ người khác (403 Forbidden)', function () {",
+              "    pm.response.to.have.status(403);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STUDENT01_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV002?docType=Giấy xác nhận&docUrl=https://example.com/test.pdf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV002"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Giấy xác nhận"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/test.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "TC10 – Transaction Rollback (simulateRollback=true -> 500)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('TC10 - Giả lập lỗi hệ thống và Rollback Transaction (500 Internal Server Error)', function () {",
+              "    pm.response.to.have.status(500);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{STAFF_TOKEN}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/documents/SV001?docType=Bằng tốt nghiệp&docUrl=https://example.com/test.pdf&simulateDelay=false&simulateRollback=true",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "SV001"
+          ],
+          "query": [
+            {
+              "key": "docType",
+              "value": "Bằng tốt nghiệp"
+            },
+            {
+              "key": "docUrl",
+              "value": "https://example.com/test.pdf"
+            },
+            {
+              "key": "simulateDelay",
+              "value": "false"
+            },
+            {
+              "key": "simulateRollback",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

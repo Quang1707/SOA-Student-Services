@@ -1,0 +1,30 @@
+# Node.js
+node_modules/
+npm-debug.log
+.env
+.env.*
+!.env.example
+
+# Maven / Java
+target/
+*.class
+*.jar
+*.war
+
+# Database files
+data/
+*.db
+
+# IDEs (VS Code, IntelliJ, Eclipse)
+.idea/
+.vscode/*
+!.vscode/launch.json
+*.iml
+.metadata/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Uploaded student documents (sensitive user content)
+**/uploads/

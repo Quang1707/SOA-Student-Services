@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: student_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Run scripts/configure-local-secrets.ps1 first}
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+      PROFILE_DB_NAME: ${PROFILE_DB_NAME:-profile_db}
+      PROFILE_DB_USER: ${PROFILE_DB_USER:-profile_app}
+      PROFILE_DB_PASSWORD: ${PROFILE_DB_PASSWORD:?Missing PROFILE_DB_PASSWORD in .env}
+      DOCUMENT_DB_NAME: ${DOCUMENT_DB_NAME:-document_db}
+      DOCUMENT_DB_USER: ${DOCUMENT_DB_USER:-document_app}
+      DOCUMENT_DB_PASSWORD: ${DOCUMENT_DB_PASSWORD:?Missing DOCUMENT_DB_PASSWORD in .env}
+      AUDIT_DB_NAME: ${AUDIT_DB_NAME:-audit_db}
+      AUDIT_DB_USER: ${AUDIT_DB_USER:-audit_app}
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD:?Missing AUDIT_DB_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: student_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-student_app}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Missing RABBITMQ_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  audit-notification-service:
+    build:
+      context: ./audit-notification-service
+      dockerfile: Dockerfile
+    container_name: student_audit_service
+    environment:
+      PORT: 8083
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL:-http://host.docker.internal:8761/eureka}
+      EUREKA_INSTANCE_HOSTNAME: ${EUREKA_INSTANCE_HOSTNAME:-localhost}
+      EUREKA_INSTANCE_ID: ${EUREKA_INSTANCE_ID:-localhost:audit-notification-service:8083}
+      EUREKA_HEARTBEAT_MS: ${EUREKA_HEARTBEAT_MS:-30000}
+      JWT_SECRET: ${JWT_SECRET:?Run scripts/configure-local-secrets.ps1 first}
+      JWT_ISSUER: student-profile-auth-service
+      AUDIT_DB_HOST: postgres
+      AUDIT_DB_PORT: 5432
+      AUDIT_DB_NAME: ${AUDIT_DB_NAME:-audit_db}
+      AUDIT_DB_USER: ${AUDIT_DB_USER:-audit_app}
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD:?Missing AUDIT_DB_PASSWORD in .env}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-student_app}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Missing RABBITMQ_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:8083:8083"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8083/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

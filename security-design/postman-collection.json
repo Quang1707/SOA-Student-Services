@@ -1,0 +1,200 @@
+{
+  "info": {
+    "name": "Nhom-9 Student Profile System - TH1 to TH5 Security Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication (TH5)",
+      "item": [
+        {
+          "name": "TC01 - Login as student01 (SV001)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/login",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"student01\",\n  \"password\": \"DemoPassword123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "TC02 - Login Wrong Password (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/login",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"student01\",\n  \"password\": \"WrongPass!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "TC03 - Login Locked Account locked01 (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/auth/login",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"locked01\",\n  \"password\": \"DemoPassword123!\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authorization & Ownership Tests (TH5)",
+      "item": [
+        {
+          "name": "TC04 - Call Protected API Without Token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/profiles/SV001",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "profiles",
+                "SV001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC06 - student01 Views Own Profile SV001 (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{STUDENT01_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/profiles/SV001",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "profiles",
+                "SV001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC07 - student01 Views Other Profile SV002 (403 IDOR Blocked)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{STUDENT01_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/profiles/SV002",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "profiles",
+                "SV002"
+              ]
+            }
+          }
+        },
+        {
+          "name": "TC13 - student01 Deletes Verified Document #1 (400 Business Rule Blocked)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{STUDENT01_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/documents/1",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "documents",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

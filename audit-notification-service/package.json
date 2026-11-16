@@ -1,0 +1,15 @@
+{
+  "name": "audit-notification-service",
+  "version": "1.0.0",
+  "description": "Audit & Security Log Consumer Service (Node.js + Express + RabbitMQ + PostgreSQL)",
+  "main": "index.js",
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pg": "^8.16.3"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
