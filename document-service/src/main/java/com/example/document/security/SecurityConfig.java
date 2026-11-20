@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Preflight CORS không mang thông tin nghiệp vụ nên được phép đi qua.
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        // TH8 health endpoints are read-only and intentionally unauthenticated for container probes.
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Document Service không phát hành JWT và không cung cấp H2 Console.
                         // Tất cả API nghiệp vụ phải có Bearer JWT hợp lệ.
                         .anyRequest().authenticated())

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 // When started directly with `npm start`, load the shared project-level .env.
 // Docker already injects the same variables, so a missing file is expected there.
@@ -207,6 +208,16 @@ app.use((error, req, res, next) => {
 let eurekaTimer = null;
 let eurekaRegistered = false;
 
+function getContainerIpAddress() {
+    const interfaces = os.networkInterfaces();
+    for (const addresses of Object.values(interfaces)) {
+        for (const address of addresses || []) {
+            if (address.family === 'IPv4' && !address.internal) return address.address;
+        }
+    }
+    return EUREKA_INSTANCE_HOSTNAME;
+}
+
 function eurekaInstancePayload() {
     const baseUrl = `http://${EUREKA_INSTANCE_HOSTNAME}:${PORT}`;
     return {
@@ -214,7 +225,8 @@ function eurekaInstancePayload() {
             instanceId: EUREKA_INSTANCE_ID,
             hostName: EUREKA_INSTANCE_HOSTNAME,
             app: EUREKA_APP_NAME,
-            ipAddr: '127.0.0.1',
+            // Advertise the container address, never loopback: Eureka consumers run in other containers.
+            ipAddr: getContainerIpAddress(),
             status: 'UP',
             overriddenstatus: 'UNKNOWN',
             port: { '$': PORT, '@enabled': 'true' },

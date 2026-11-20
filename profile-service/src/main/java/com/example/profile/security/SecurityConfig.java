@@ -48,6 +48,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/api/auth/**",
                                 "/api/v1/instance-info",
+                                "/actuator/health", "/actuator/health/**", "/actuator/info",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**")
                         .permitAll()

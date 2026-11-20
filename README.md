@@ -215,3 +215,32 @@ Script đăng nhập bằng tài khoản demo `admin01`, gửi 20 request từ G
 Dừng một Profile instance và đợi Eureka cập nhật lease; chạy lại script để xác nhận instance còn lại phục vụ. Sau đó dừng cả hai instance và gọi endpoint `GET /api/v1/documents/discovery/profile-instance-info` để kiểm tra Document Service trả lỗi `503 PROFILE_SERVICE_UNAVAILABLE`. Khởi động lại một instance và quan sát đăng ký lại.
 
 Chi tiết sơ đồ, danh sách service, sequence flow và bảng test nằm trong `docs/architecture/`, `docs/service-registry/` và `tests/service-discovery/`. Kết quả CSV/ảnh Dashboard chỉ được xem là minh chứng sau khi nhóm thực sự chạy test trên máy của mình.
+
+
+## TH8 – Triển khai và vận hành bằng Docker Compose
+
+Hệ thống hiện được đóng gói đầy đủ bằng Docker Compose, gồm Eureka, Gateway, hai Profile instance, Document, Audit, PostgreSQL và RabbitMQ.
+
+### Khởi chạy nhanh
+
+```powershell
+.\scripts\configure-local-secrets.ps1
+docker compose config --quiet
+docker compose up -d --build
+docker compose ps
+```
+
+Trên Linux/macOS, tạo `.env` từ `.env.example` và thay các giá trị `CHANGE_ME` trước khi chạy Compose.
+
+- API Gateway: `http://localhost:8080`
+- Eureka Dashboard: `http://localhost:8761`
+- Actuator Gateway: `http://localhost:8080/actuator/health`
+- Actuator Profile: `http://localhost:8081/actuator/health` và `http://localhost:8084/actuator/health`
+- Actuator Document: `http://localhost:8082/actuator/health`
+- Audit health: `http://localhost:8083/health`
+
+### Vận hành và kiểm thử
+
+Xem [Deployment Design](docs/deployment/deployment-design.md), [Operation Guide](docs/operation/operation-guide.md), [Deployment Test Cases](docs/test/deployment-test-cases.md) và [Failure Analysis](docs/operation/failure-analysis.md). Test case phải được chạy thực tế và cập nhật trạng thái/bằng chứng; không mặc định PASS.
+
+Dừng hệ thống nhưng giữ dữ liệu: `docker compose down`. Không dùng `docker compose down -v` trừ khi chủ động muốn xóa toàn bộ volume và dữ liệu.

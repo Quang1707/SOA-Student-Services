@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: student_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_ADMIN_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Run scripts/configure-local-secrets.ps1 first}
@@ -21,6 +20,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+    networks: [student-network]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -30,8 +30,7 @@ services:
     restart: unless-stopped
 
   rabbitmq:
-    image: rabbitmq:3-management
-    container_name: student_rabbitmq
+    image: rabbitmq:3-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-student_app}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Missing RABBITMQ_PASSWORD in .env}
@@ -40,6 +39,7 @@ services:
       - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks: [student-network]
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -48,19 +48,134 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  discovery-server:
+    build:
+      context: ./discovery-server
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: discovery-server
+    ports:
+      - "127.0.0.1:8761:8761"
+    networks: [student-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8761/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 45s
+    restart: unless-stopped
+
+  profile-service:
+    build:
+      context: ./profile-service
+      dockerfile: Dockerfile
+    environment: &profile-environment
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${PROFILE_DB_NAME:-profile_db}
+      PROFILE_DB_USER: ${PROFILE_DB_USER:-profile_app}
+      PROFILE_DB_PASSWORD: ${PROFILE_DB_PASSWORD:?Missing PROFILE_DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Run scripts/configure-local-secrets.ps1 first}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-86400}
+      JWT_ISSUER: ${JWT_ISSUER:-student-profile-auth-service}
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?Run scripts/configure-local-secrets.ps1 first}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-student_app}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Missing RABBITMQ_PASSWORD in .env}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      EUREKA_INSTANCE_INSTANCE_ID: profile-service-1:8081
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      discovery-server: {condition: service_healthy}
+    networks: [student-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    restart: unless-stopped
+
+  profile-service-2:
+    build:
+      context: ./profile-service
+      dockerfile: Dockerfile
+    environment:
+      <<: *profile-environment
+      EUREKA_INSTANCE_INSTANCE_ID: profile-service-2:8081
+    ports:
+      - "127.0.0.1:8084:8081"
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      discovery-server: {condition: service_healthy}
+      profile-service: {condition: service_healthy}
+    networks: [student-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    restart: unless-stopped
+
+  document-service:
+    build:
+      context: ./document-service
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DOCUMENT_DB_NAME:-document_db}
+      DOCUMENT_DB_USER: ${DOCUMENT_DB_USER:-document_app}
+      DOCUMENT_DB_PASSWORD: ${DOCUMENT_DB_PASSWORD:?Missing DOCUMENT_DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Run scripts/configure-local-secrets.ps1 first}
+      JWT_ISSUER: ${JWT_ISSUER:-student-profile-auth-service}
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?Run scripts/configure-local-secrets.ps1 first}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-student_app}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Missing RABBITMQ_PASSWORD in .env}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      PROFILE_SERVICE_URL: http://profile-service/api/v1/profiles
+      PROFILE_SERVICE_INSTANCE_INFO_URL: http://profile-service/api/v1/instance-info
+      DOCUMENT_STORAGE_DIR: /app/uploads
+    ports:
+      - "127.0.0.1:8082:8082"
+    volumes:
+      - document_uploads:/app/uploads
+    depends_on:
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      discovery-server: {condition: service_healthy}
+      profile-service: {condition: service_healthy}
+    networks: [student-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8082/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    restart: unless-stopped
+
   audit-notification-service:
     build:
       context: ./audit-notification-service
       dockerfile: Dockerfile
-    container_name: student_audit_service
     environment:
+      NODE_ENV: production
       PORT: 8083
-      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL:-http://host.docker.internal:8761/eureka}
-      EUREKA_INSTANCE_HOSTNAME: ${EUREKA_INSTANCE_HOSTNAME:-localhost}
-      EUREKA_INSTANCE_ID: ${EUREKA_INSTANCE_ID:-localhost:audit-notification-service:8083}
+      EUREKA_SERVER_URL: http://discovery-server:8761/eureka
+      EUREKA_INSTANCE_HOSTNAME: audit-notification-service
+      EUREKA_INSTANCE_ID: audit-notification-service:audit-notification-service:8083
       EUREKA_HEARTBEAT_MS: ${EUREKA_HEARTBEAT_MS:-30000}
       JWT_SECRET: ${JWT_SECRET:?Run scripts/configure-local-secrets.ps1 first}
-      JWT_ISSUER: student-profile-auth-service
+      JWT_ISSUER: ${JWT_ISSUER:-student-profile-auth-service}
       AUDIT_DB_HOST: postgres
       AUDIT_DB_PORT: 5432
       AUDIT_DB_NAME: ${AUDIT_DB_NAME:-audit_db}
@@ -72,21 +187,48 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Missing RABBITMQ_PASSWORD in .env}
     ports:
       - "127.0.0.1:8083:8083"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      postgres: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      discovery-server: {condition: service_healthy}
+    networks: [student-network]
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8083/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 15s
+      start_period: 20s
     restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8080
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server: {condition: service_healthy}
+      profile-service: {condition: service_healthy}
+      document-service: {condition: service_healthy}
+      audit-notification-service: {condition: service_healthy}
+    networks: [student-network]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/actuator/health | grep -q 'UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 45s
+    restart: unless-stopped
+
+networks:
+  student-network:
+    driver: bridge
 
 volumes:
   postgres_data:
   rabbitmq_data:
+  document_uploads:
